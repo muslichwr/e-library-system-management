@@ -2,10 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\Buku;
 use App\Models\User;
+use App\Models\Buku;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Auth\Access\Response;
 
 class BukuPolicy
 {
@@ -16,7 +15,7 @@ class BukuPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->can('view_any_buku');
     }
 
     /**
@@ -24,7 +23,7 @@ class BukuPolicy
      */
     public function view(User $user, Buku $buku): bool
     {
-        return true;
+        return $user->can('view_buku');
     }
 
     /**
@@ -32,7 +31,7 @@ class BukuPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('create_buku');
     }
 
     /**
@@ -40,7 +39,7 @@ class BukuPolicy
      */
     public function update(User $user, Buku $buku): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('update_buku');
     }
 
     /**
@@ -48,7 +47,7 @@ class BukuPolicy
      */
     public function delete(User $user, Buku $buku): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('delete_buku');
     }
 
     /**
@@ -56,7 +55,7 @@ class BukuPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('delete_any_buku');
     }
 
     /**
@@ -64,7 +63,7 @@ class BukuPolicy
      */
     public function forceDelete(User $user, Buku $buku): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('force_delete_buku');
     }
 
     /**
@@ -72,7 +71,7 @@ class BukuPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('force_delete_any_buku');
     }
 
     /**
@@ -80,7 +79,7 @@ class BukuPolicy
      */
     public function restore(User $user, Buku $buku): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('restore_buku');
     }
 
     /**
@@ -88,7 +87,7 @@ class BukuPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('restore_any_buku');
     }
 
     /**
@@ -96,7 +95,7 @@ class BukuPolicy
      */
     public function replicate(User $user, Buku $buku): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('replicate_buku');
     }
 
     /**
@@ -104,6 +103,6 @@ class BukuPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->role === 'librarian';
+        return $user->can('reorder_buku');
     }
 }
