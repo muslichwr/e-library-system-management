@@ -17,7 +17,8 @@ return new class extends Migration
             $table->foreignId('buku_id')->constrained('bukus')->onDelete('cascade');
             $table->date('tanggal_pinjam');
             $table->date('tanggal_kembali')->nullable();
-            $table->enum('status', ['dipinjam', 'dikembalikan', 'terlambat'])->default('dipinjam');
+            $table->enum('status', ['pending', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak'])
+                ->default('pending');
             $table->timestamps();
         });
     }

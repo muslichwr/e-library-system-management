@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -75,7 +76,8 @@ class BukuResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-   Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                self::getPinjamAction(),
 
             ])
             ->bulkActions([
@@ -83,6 +85,28 @@ class BukuResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function getPinjamAction(): Action
+    {
+        return Action::make('pinjam')
+            ->label('Pinjam')
+            ->color('success')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->visible(function (Buku $record) {
+                // Hanya tampilkan jika:
+                // 1. Buku tersedia (stock > 0)
+                // 2. User memiliki permission untuk create peminjaman
+                // 3. User adalah role borrower
+                return $record->stock > 0 &&
+                    auth()->user()->can('create_peminjaman');
+            })
+            ->action(function (Buku $record) {
+                // Redirect ke halaman create peminjaman dengan parameter buku_id
+                return redirect()->route('filament.admin.resources.peminjamen.create', [
+                    'buku_id' => $record->id
+                ]);
+            });
     }
 
     public static function getRelations(): array
