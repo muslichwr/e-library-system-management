@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Peminjaman;
 use App\Models\User;
+use App\Observers\PeminjamanObserver;
 use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -34,5 +36,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('discord', \SocialiteProviders\Google\Provider::class);
         });
+
+
+        Peminjaman::observe(PeminjamanObserver::class);
     }
 }

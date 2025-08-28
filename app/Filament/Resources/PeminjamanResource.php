@@ -25,7 +25,7 @@ class PeminjamanResource extends Resource
     protected static ?string $modelLabel = 'Peminjaman';
 
     public static function form(Form $form): Form
- {
+    {
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
@@ -57,6 +57,7 @@ class PeminjamanResource extends Resource
                         'dikembalikan' => 'Dikembalikan',
                         'terlambat' => 'Terlambat',
                         'ditolak' => 'Ditolak',
+                        'hilang' => 'Hilang',
                     ])
                     ->required()
                     ->reactive()
@@ -64,7 +65,7 @@ class PeminjamanResource extends Resource
                         if ($state === 'dipinjam' && !$record->tanggal_pinjam) {
                             $set('tanggal_pinjam', now()->format('Y-m-d'));
                         }
-                        
+
                         if ($state === 'dikembalikan' && !$record->tanggal_kembali) {
                             $set('tanggal_kembali', now()->format('Y-m-d'));
                         }
@@ -108,6 +109,7 @@ class PeminjamanResource extends Resource
                         'dikembalikan' => 'success',
                         'terlambat' => 'danger',
                         'ditolak' => 'danger',
+                        'hilang' => 'danger',
                     })
                     ->sortable(),
 
@@ -139,20 +141,20 @@ class PeminjamanResource extends Resource
                             ->when($data['sampai_tanggal'], fn(Builder $query, $date) => $query->whereDate('tanggal_pinjam', '<=', $date));
                     }),
             ])
-->actions([
+            ->actions([
                 Tables\Actions\ViewAction::make(),
-                
+
                 // Action Approve
                 Tables\Actions\Action::make('approve')
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(Peminjaman $record) => $record->status === 'pending' && 
-                                                   (Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')))
+                    ->visible(fn(Peminjaman $record) => $record->status === 'pending' &&
+                        (Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')))
                     ->requiresConfirmation()
                     ->action(function (Peminjaman $record) {
                         $buku = $record->buku;
-                        
+
                         // Cek stock buku
                         if ($buku->stock <= 0) {
                             Notification::make()
@@ -162,42 +164,62 @@ class PeminjamanResource extends Resource
                                 ->send();
                             return;
                         }
-                        
+
                         // Kurangi stock dan update status
                         $buku->decrement('stock');
                         $record->update([
                             'status' => 'dipinjam',
                             'tanggal_pinjam' => now()->format('Y-m-d'),
                         ]);
-                        
+
                         Notification::make()
                             ->title('Berhasil')
                             ->body('Peminjaman telah disetujui.')
                             ->success()
                             ->send();
                     }),
-                
+
                 // Action Reject
                 Tables\Actions\Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn(Peminjaman $record) => $record->status === 'pending' && 
-                                                 (Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')))
+                    ->visible(fn(Peminjaman $record) => $record->status === 'pending' &&
+                        (Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')))
                     ->requiresConfirmation()
                     ->action(function (Peminjaman $record) {
                         $record->update(['status' => 'ditolak']);
-                        
+
                         Notification::make()
                             ->title('Berhasil')
                             ->body('Peminjaman telah ditolak.')
                             ->success()
                             ->send();
                     }),
-                
+
+                Tables\Actions\Action::make('laporkanHilang')
+                    ->label('Hilang')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-mark')
+                    ->visible(
+                        fn(Peminjaman $record) => ($record->status === 'terlambat' || $record->status === 'dipinjam') &&
+                            (Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin'))
+                    )
+                    ->action(function (Peminjaman $record, array $data) {
+                        $record->update([
+                            'status' => 'hilang',
+                        ]);
+
+                        Notification::make()
+                            ->title('Berhasil')
+                            ->body('Buku telah dilaporkan hilang dan stock dikurangi.')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\EditAction::make()
                     ->visible(fn() => Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')),
-                    
+
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn() => Auth::user()->hasRole('librarian') || Auth::user()->hasRole('super_admin')),
             ])
